@@ -7,7 +7,6 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Hash;
 
 class SocialLoginController extends Controller
 {
@@ -28,18 +27,22 @@ class SocialLoginController extends Controller
     public function handleProviderCallback($provider)
     {
         $socialUser = Socialite::driver($provider)->user();
-        $name = $socialUser->getName();
-        $email = $socialUser->getEmail();
-        if (!$user = $this->model::where('email', $email)->first()) {
-            event(new Registered($user = $this->model::create([
-                'name' => $name,
-                'email' => $email,
-                'password' => Hash::make(str_random(32)),
-            ])));
-            $this->guard()->login($user);
-            return redirect()->intended($this->redirectPath());
-        }
-        Auth::loginUsingId($user->id);
+        $user = $this->findOrCreate($socialUser, $provider);
+        Auth::login($user);
         return redirect()->intended($this->redirectPath());
+    }
+
+    private function findOrCreate($socialUser, $provider)
+    {
+        if (!$user = $this->model::where('provider', $provider)->where('provider_id', $socialUser->getId())->first()) {
+            $user = new $this->model();
+            $user->name = $socialUser->getName();
+            $user->email = $socialUser->getEmail();
+            $user->provider = $provider;
+            $user->provider_id = $socialUser->getId();
+            $user->save();
+            event(new Registered($user));
+        }
+        return $user;
     }
 }
