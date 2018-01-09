@@ -6,15 +6,6 @@ use Illuminate\Support\ServiceProvider;
 
 class SocialLoginServiceProvider extends ServiceProvider
 {
-    protected $commands = [];
-
-    public function register()
-    {
-        if ($this->app->runningInConsole()) {
-            $this->commands($this->commands);
-        }
-    }
-
     public function boot()
     {
         require __DIR__ . '/../Routes.php';
