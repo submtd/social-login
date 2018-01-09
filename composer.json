@@ -1,0 +1,23 @@
+{
+    "name": "submtd/social-login",
+    "description": "Login and register Laravel users with social media accounts",
+    "authors": [
+        {
+            "name": "Steve Harmeyer",
+            "email": "harmeyersteve@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Submtd\\SocialLogin\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Submtd\\SocialLogin\\Providers\\SocialLoginServiceProvider"
+            ]
+        }
+    }
+}
