@@ -17,8 +17,8 @@ class AddProviderFieldsToUsers extends Migration
             // make email nullable
             $table->string('email')->nullable()->change();
             // add provider fields
-            $table->string('provider')->index();
-            $table->string('provider_id')->index();
+            $table->string('provider')->nullable()->index();
+            $table->string('provider_id')->nullable()->index();
         });
     }
 
