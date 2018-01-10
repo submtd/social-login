@@ -14,10 +14,12 @@ class SocialLoginController extends Controller
     use RegistersUsers;
 
     protected $model;
+    protected $redirectTo;
 
     public function __construct()
     {
         $this->model = config('auth.providers.users.model');
+        $this->redirectTo = config('social-login.redirectTo', '/home');
     }
 
     public function redirectToProvider($provider)
