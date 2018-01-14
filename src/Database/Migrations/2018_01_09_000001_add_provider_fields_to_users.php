@@ -14,8 +14,6 @@ class AddProviderFieldsToUsers extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            // make email nullable
-            $table->string('email')->nullable()->change();
             // add provider fields
             $table->string('provider')->nullable()->index();
             $table->string('provider_id')->nullable()->index();
@@ -30,8 +28,6 @@ class AddProviderFieldsToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            // make email not nullable
-            $table->string('email')->nullable(false)->change();
             // remove provider fields
             $table->dropColumn('provider');
             $table->dropColumn('provider_id');
