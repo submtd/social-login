@@ -102,7 +102,7 @@ class SocialLoginController extends Controller
         }
         // log the user in, update the social login id model and redirect
         Auth::login($user);
-        $socialLoginId->user_id = Auth::id();
+        $socialLoginId->user_id = $user->id;
         $socialLoginId->save();
         return redirect($this->redirectOnSuccess);
     }
