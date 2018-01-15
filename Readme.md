@@ -61,6 +61,10 @@ php artisan vendor:publish --provider="Submtd\SocialLogin\Providers\SocialLoginS
 php artisan vendor:publish --provider="Submtd\SocialLogin\Providers\SocialLoginServiceProvider" --tag=migrations
 ```
 
+## Configuring Authentication Providers
+
+Authentication provider configuration is stored in `config/services.php`. More information on configuring the providers can be found in the [https://laravel.com/docs/5.5/socialite#configuration](Laravel Socialite Documentation) page.
+
 ## Donation
 
 If this project helped you save some development time, feel free to buy me a beer ;)
