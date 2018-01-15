@@ -8,7 +8,6 @@
         }
     ],
     "require": {
-        "doctrine/dbal": "^2.5",
         "laravel/socialite": "^3.0"
     },
     "autoload": {

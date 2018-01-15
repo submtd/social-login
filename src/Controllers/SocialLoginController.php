@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Input;
+use Submtd\SocialLogin\Models\SocialLoginId;
+use Illuminate\Support\Facades\Request;
 
 class SocialLoginController extends Controller
 {
@@ -23,16 +24,16 @@ class SocialLoginController extends Controller
     protected $userClass;
 
     /**
-     * The URL the user should be redirected to after confirming their
-     * email address. This is populated from config/email-confirmation.php
+     * The URL the user should be redirected to after a successful login.
+     * This is populated from config/social-login.php
      *
      * @var string
      */
     protected $redirectOnSuccess;
 
     /**
-     * The URL the user should be redirected to after a failed confirmation
-     * attempt. This is populated from config/email-confirmation.php
+     * The URL the user should be redirected to after a failed login
+     * attempt. This is populated from config/social-login.php
      *
      * @var string
      */
@@ -49,66 +50,60 @@ class SocialLoginController extends Controller
         $this->redirectOnFail = config('social-login.redirectOnFail', '/login');
     }
 
+    /**
+     * Redirects the user to the oauth page for the provider.
+     *
+     * @param string $provider
+     * @return void
+     */
     public function redirectToProvider($provider)
     {
         return Socialite::driver($provider)->redirect();
     }
 
+    /**
+     * Handles the oauth callback from the provider.
+     *
+     * @param string $provider
+     * @return void
+     */
     public function handleProviderCallback($provider)
     {
+        // load the user from the driver
         $socialUser = Socialite::driver($provider)->user();
-        if (!$socialUser->getEmail()) {
-            session(['socialUser' => $socialUser]);
-            return view('social-login::ConfirmEmail');
+        // first or new the provider creds
+        $socialLoginId = SocialLoginId::firstOrNew([
+            'provider' => $provider,
+            'provider_id' => $socialUser->getId(),
+        ]);
+        // if the provider creds already match a user, log in and move on
+        if ($socialLoginId->user_id) {
+            Auth::login($socialLoginId->user);
+            return redirect($this->redirectOnSuccess);
         }
-        $user = $this->findOrCreateByEmail($socialUser, $provider);
-        Auth::login($user);
-        return redirect($this->redirectOnSuccess);
-    }
-
-    public function confirmEmail()
-    {
-        if (!$socialUser = session('socialUser')) {
-            Request::session()->flash('status', config('social-login.statusMessages.invalidUser', 'Invalid user.'));
+        // if the user isn't already logged in and we can't get an email from the provider, fail
+        if (!Auth::user() && !$socialUser->getEmail()) {
+            Request::session()->flash('status', config('social-login.statusMessages.noEmailFound', 'No email address was found for this user.'));
             return redirect($this->redirectOnFail);
         }
-        $socialUser->email = Input::get('email');
-        $user = $this->findOrCreateByEmail($socialUser);
+        // get the logged in user or create a new one
+        if (!$user = Auth::user()) {
+            $user = $this->userClass::firstOrNew([
+                'email' => $socialUser->getEmail(),
+            ]);
+        }
+        // check if this is a new user
+        if (!$user->created_at) {
+            $user->name = $socialUser->getName();
+            $user->password = Hash::make(str_random(32));
+            $user->save();
+            // fire the registered event
+            event(new Registered($user));
+        }
+        // log the user in, update the social login id model and redirect
         Auth::login($user);
+        $socialLoginId->user_id = Auth::id();
+        $socialLoginId->save();
         return redirect($this->redirectOnSuccess);
-    }
-
-    private function findOrCreateByEmail($socialUser, $provider)
-    {
-        if (!$user = $this->model::where('email', $socialUser->getEmail())->first()) {
-            $user = $this->makeUser($socialUser, $provider);
-        }
-        return $user;
-    }
-
-    private function findOrCreateByProviderId($socialUser, $provider)
-    {
-        if (!$user = $this->model::where('provider', $provider)->where('provider_id', $socialUser->getId())->first()) {
-            $user = $this->makeUser($socialUser, $provider);
-        }
-        return $user;
-    }
-
-    private function makeUser($socialUser, $provider)
-    {
-        $user = new $this->model();
-        $user->name = $socialUser->getName();
-        if (!$user->email = $socialUser->getEmail()) {
-            if (!$user->email = $socialUser->email) {
-                Request::session()->flash('status', config('social-login.statusMessages.invalidUser', 'Invalid user.'));
-                return redirect($this->redirectOnFail);
-            }
-        }
-        $user->password = Hash::make(str_random(32));
-        $user->provider = $provider;
-        $user->provider_id = $socialUser->getId();
-        $user->save();
-        event(new Registered($user));
-        return $user;
     }
 }
