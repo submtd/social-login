@@ -81,6 +81,10 @@ class SocialLoginController extends Controller
             Auth::login($socialLoginId->user);
             return redirect($this->redirectOnSuccess);
         }
+        if (!config('social-login.allowSocialRegistration', true) && !Auth::user()) {
+            Request::session()->flash('status', config('social-login.statusMessages.socialRegistrationDisabled', 'Registration from social media accounts has been disabled.'));
+            return redirect($this->redirectOnFail);
+        }
         // if the user isn't already logged in and we can't get an email from the provider, fail
         if (!Auth::user() && !$socialUser->getEmail()) {
             Request::session()->flash('status', config('social-login.statusMessages.noEmailFound', 'No email address was found for this user.'));

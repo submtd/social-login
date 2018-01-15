@@ -20,7 +20,6 @@ class CreateSocialLoginIds extends Migration
             $table->string('provider');
             $table->string('provider_id');
             $table->timestamps();
-            $table->unique(['user_id', 'provider']);
             $table->index(['provider', 'provider_id']);
         });
     }
