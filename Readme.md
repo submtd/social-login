@@ -1,6 +1,6 @@
 # Social Login for Laravel
 
-This package enables login and registration for users via social media in your Laravel app. This package requires no changes to core laravel files or your user model.
+This package enables login and registration for users via social media in your Laravel app using the [Laravel Socialite package](https://laravel.com/docs/5.5/socialite).
 
 ## Installation
 
