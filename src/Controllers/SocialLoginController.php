@@ -9,7 +9,6 @@ use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Submtd\SocialLogin\Models\SocialLoginId;
-use Illuminate\Support\Facades\Request;
 
 class SocialLoginController extends Controller
 {
@@ -69,45 +68,45 @@ class SocialLoginController extends Controller
      */
     public function handleProviderCallback($provider)
     {
-        // load the user from the driver
-        $socialUser = Socialite::driver($provider)->user();
-        // first or new the provider creds
-        $socialLoginId = SocialLoginId::firstOrNew([
-            'provider' => $provider,
-            'provider_id' => $socialUser->getId(),
-        ]);
-        // if the provider creds already match a user, log in and move on
-        if ($socialLoginId->user_id) {
-            Auth::login($socialLoginId->user);
-            return redirect($this->redirectOnSuccess);
-        }
-        if (!config('social-login.allowSocialRegistration', true) && !Auth::user()) {
-            Request::session()->flash('status', config('social-login.statusMessages.socialRegistrationDisabled', 'Registration from social media accounts has been disabled.'));
-            return redirect($this->redirectOnFail);
-        }
-        // if the user isn't already logged in and we can't get an email from the provider, fail
-        if (!Auth::user() && !$socialUser->getEmail()) {
-            Request::session()->flash('status', config('social-login.statusMessages.noEmailFound', 'No email address was found for this user.'));
-            return redirect($this->redirectOnFail);
-        }
-        // get the logged in user or create a new one
-        if (!$user = Auth::user()) {
-            $user = $this->userClass::firstOrNew([
-                'email' => $socialUser->getEmail(),
+        try {
+            // load the user from the driver
+            $socialUser = Socialite::driver($provider)->user();
+            // first or new the provider creds
+            $socialLoginId = SocialLoginId::firstOrNew([
+                'provider' => $provider,
+                'provider_id' => $socialUser->getId(),
             ]);
+            // if the provider creds already match a user, log in and move on
+            if ($socialLoginId->user_id) {
+                Auth::login($socialLoginId->user);
+                return redirect()->intended('login');
+            }
+            if (!config('social-login.allowSocialRegistration', true) && !Auth::user()) {
+                abort(403, 'Registration from social media accounts has been disabled.');
+            }
+            // if the user isn't already logged in and we can't get an email from the provider, fail
+            if (!Auth::user() && !$socialUser->getEmail()) {
+                abort(400, 'No email address was found for this user.');
+            }
+            // get the logged in user or create a new one
+            if (!$user = Auth::user()) {
+                $user = $this->userClass::firstOrNew(['email' => $socialUser->getEmail()]);
+            }
+            // check if this is a new user
+            if (!$user->created_at) {
+                $user->name = $socialUser->getName();
+                $user->password = Hash::make(str_random(32));
+                $user->save();
+                // fire the registered event
+                event(new Registered($user));
+            }
+            // log the user in, update the social login id model and redirect
+            Auth::login($user);
+            $socialLoginId->user_id = $user->id;
+            $socialLoginId->save();
+            return redirect()->intended('login');
+        } catch (\Exception $e) {
+            abort(500, $e->getMessage());
         }
-        // check if this is a new user
-        if (!$user->created_at) {
-            $user->name = $socialUser->getName();
-            $user->password = Hash::make(str_random(32));
-            $user->save();
-            // fire the registered event
-            event(new Registered($user));
-        }
-        // log the user in, update the social login id model and redirect
-        Auth::login($user);
-        $socialLoginId->user_id = $user->id;
-        $socialLoginId->save();
-        return redirect($this->redirectOnSuccess);
     }
 }
