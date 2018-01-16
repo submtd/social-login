@@ -1,6 +1,7 @@
 {
     "name": "submtd/social-login",
     "description": "Login and register Laravel users with social media accounts",
+    "license": "MIT",
     "authors": [
         {
             "name": "Steve Harmeyer",
