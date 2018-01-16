@@ -23,30 +23,12 @@ class SocialLoginController extends Controller
     protected $userClass;
 
     /**
-     * The URL the user should be redirected to after a successful login.
-     * This is populated from config/social-login.php
-     *
-     * @var string
-     */
-    protected $redirectOnSuccess;
-
-    /**
-     * The URL the user should be redirected to after a failed login
-     * attempt. This is populated from config/social-login.php
-     *
-     * @var string
-     */
-    protected $redirectOnFail;
-
-    /**
      * Class constructor. Grabs some values from config files and populates
      * the class properties.
      */
     public function __construct()
     {
         $this->userClass = config('auth.providers.users.model');
-        $this->redirectOnSuccess = config('social-login.redirectOnSuccess', '/');
-        $this->redirectOnFail = config('social-login.redirectOnFail', '/login');
     }
 
     /**
