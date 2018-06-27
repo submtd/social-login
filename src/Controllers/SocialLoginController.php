@@ -64,7 +64,8 @@ class SocialLoginController extends Controller
             // if the provider creds already match a user, log in and move on
             if ($socialLoginId->user_id) {
                 Auth::login($socialLoginId->user);
-                return redirect()->intended('login');
+                return Redirect::to(URL::previous());
+                // return redirect()->intended('login');
             }
             if (!config('social-login.allowSocialRegistration', true) && !Auth::user()) {
                 abort(403, 'Registration from social media accounts has been disabled.');
@@ -89,7 +90,7 @@ class SocialLoginController extends Controller
             Auth::login($user);
             $socialLoginId->user_id = $user->id;
             $socialLoginId->save();
-            return Redirect::to(session('redirect'));
+            return Redirect::to(URL::previous());
             // return redirect()->intended('login');
         } catch (\Exception $e) {
             abort(500, $e->getMessage());
