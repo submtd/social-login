@@ -9,6 +9,8 @@ use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Submtd\SocialLogin\Models\SocialLoginId;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\URL;
 
 class SocialLoginController extends Controller
 {
@@ -86,7 +88,8 @@ class SocialLoginController extends Controller
             Auth::login($user);
             $socialLoginId->user_id = $user->id;
             $socialLoginId->save();
-            return redirect()->intended('login');
+            return Redirect::to(URL::previous());
+            // return redirect()->intended('login');
         } catch (\Exception $e) {
             abort(500, $e->getMessage());
         }
