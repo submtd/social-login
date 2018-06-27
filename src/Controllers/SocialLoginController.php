@@ -41,6 +41,7 @@ class SocialLoginController extends Controller
      */
     public function redirectToProvider($provider)
     {
+        session(['redirect' => URL::previous()]);
         return Socialite::driver($provider)->redirect();
     }
 
@@ -88,7 +89,7 @@ class SocialLoginController extends Controller
             Auth::login($user);
             $socialLoginId->user_id = $user->id;
             $socialLoginId->save();
-            return Redirect::to(URL::previous());
+            return Redirect::to(session('redirect'));
             // return redirect()->intended('login');
         } catch (\Exception $e) {
             abort(500, $e->getMessage());
